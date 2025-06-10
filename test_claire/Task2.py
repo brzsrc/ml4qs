@@ -113,7 +113,7 @@ if __name__ == '__main__':
     loader = JamesLoader()
     df = loader.main2()
     task = Task2()
-    task.text()
+    # task.text()
     # task.nan_vals()
     # task.plot_data_over_time2(df, "X", "Y", "Z")
     # task.box_plot()

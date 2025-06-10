@@ -3,3 +3,5 @@
 __pycache__
 /.venv
 test_claire/datasets/badminton/all_data.parquet
+test_claire/test.py
+test_claire/datasets/*.csv
