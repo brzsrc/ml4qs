@@ -1,2 +1,5 @@
 .idea/
 .DS_Store
+__pycache__
+/.venv
+test_claire/datasets/badminton/all_data.parquet

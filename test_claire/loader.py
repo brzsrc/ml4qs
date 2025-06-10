@@ -1,5 +1,5 @@
+import os
 from typing import Dict, List
-
 import pandas as pd
 import numpy as np
 import re
@@ -7,55 +7,61 @@ import copy
 from datetime import datetime, timedelta
 import matplotlib.pyplot as plot
 import matplotlib.dates as md
-from gensim.corpora import Dictionary
 
+class JamesLoader:
+    # dir = 'datasets/badminton/Claire'
+    dir = 'datasets/badminton/eric2'
 
-class Loader:
-    EXCEL_PATH = 'datasets/test_claire/test_claire_all.xls'
-    xls = pd.ExcelFile(EXCEL_PATH)
+    def main2(self) -> pd.DataFrame:
+        # Base directory path
+        base_dir = 'datasets/badminton'
+        all_dfs = []
+
+        for entry in os.scandir(base_dir):
+            if not entry.is_dir(): continue
+
+            for file in os.listdir(entry):
+                skill_type = file.replace(f'_{entry.name}.xls', '')
+                # skill_type = file.replace('_keeley.xls', '')
+                xls = pd.ExcelFile(os.path.join(entry.path, file))
+                dfs = []
+                for sheet_name in xls.sheet_names:
+                    if sheet_name in {'Location', 'Proximity', 'Metadata Device', 'Barometer',
+                                      'Metadata Time'}: continue
+                    df = xls.parse(sheet_name)
+                    df.columns = ['time', 'X', 'Y', 'Z']
+                    df['sensor_type'] = sheet_name
+                    dfs.append(df)
+
+                all_df = pd.concat(dfs)
+                assert not all_df.duplicated().any()
+                meta = xls.parse('Metadata Time')[['event', 'experiment time']]
+                m2 = pd.DataFrame(
+                    dict(start=meta[meta['event'] != 'PAUSE']['experiment time'].reset_index(drop=True)))
+                m2["sample_number"] = m2.index.map(int)
+                all_df['sample_number'] = m2.set_index('start').asof(all_df.time).reset_index(drop=True)
+                all_df['skill_type'] = skill_type
+                all_df['user'] = entry.name
+                all_df = all_df[['skill_type', 'user', 'sample_number', 'sensor_type', 'time', 'X', 'Y', 'Z']].copy()
+                all_dfs.append(all_df)
+
+        all_dfx = pd.concat(all_dfs)
+        assert not all_dfx.duplicated().any()
+        return all_dfx
 
     @classmethod
-    def from_excel(cls) -> Dict[str, pd.DataFrame]:
-        all_sheets = {}
-        for sheet_name in cls.xls.sheet_names[:]:
-            if sheet_name != 'Location':
-                # print(sheet_name)
-                df = pd.read_excel(cls.EXCEL_PATH, sheet_name=sheet_name)
-                all_sheets[sheet_name] = df
-                # print(df.head(5))
-        return all_sheets
-
-    @classmethod
-    def add_music_genre(cls, genres: List[str], meta_time: pd.DataFrame) -> pd.DataFrame:
-        new_genres = [item for item in genres for _ in range(2)]
-        meta_time['genres'] = new_genres
-        return meta_time
-
-
-    @classmethod
-    def split_data_by_metadata_time(cls, df: pd.DataFrame, meta_time: pd.DataFrame) -> pd.DataFrame:
-        time_col = "Time (s)"
-        print(df.columns)
-        meta_time = cls.add_music_genre(["no_music", "soft", "classical", "rap", "pop", "electronic"], meta_time)
-        for group, sdf in meta_time.groupby('genres'):
-            # print(group)
-            # print(sdf)
-            start_time = sdf.loc[sdf["event"] == "START", "experiment time"].iloc[0]
-            end_time = sdf.loc[sdf["event"] == "PAUSE", "experiment time"].iloc[0]
-            # print(start_time, end_time)
-            # print(df[time_col])
-
-            mask = (df[time_col] >= start_time) & (df[time_col] <= end_time)
-            df.loc[mask, 'genre'] = group
-
-            df.loc[mask, "timestamp"] = df.loc[mask, time_col] - start_time
-
-        # print(df.to_string())
+    def from_parquet(cls) -> pd.DataFrame:
+        path = "datasets/badminton/all_data.parquet"
+        df = pd.read_parquet(path)
+        print("loaded!")
         return df
 
-
-
 if __name__ == '__main__':
-    loader = Loader()
-    all_sheets  = loader.from_excel()
-    df = loader.split_data_by_metadata_time(all_sheets["Accelerometer"], all_sheets["Metadata Time"])
+    df = JamesLoader().main2()
+    # print(df.shape)
+    df.to_parquet("datasets/badminton/all_data.parquet")
+    # loader = Loader()
+    # all_sheets  = loader.from_excel()
+    # df = loader.split_data_by_metadata_time(all_sheets["Accelerometer"], all_sheets["Metadata Time"])
+    # df = JamesLoader.from_parquet()
+    # print(df.head())
