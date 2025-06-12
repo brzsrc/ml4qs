@@ -1,19 +1,63 @@
-  skill_type    user sample_number    sensor_type      time         X         Y         Z
-1      clear  keeley      sample_0  Accelerometer  0.009929  6.541696  0.579295  7.732919
-2      clear  keeley      sample_0  Accelerometer  0.019966  6.260880  0.532742  7.726632
-3      clear  keeley      sample_0  Accelerometer  0.030003  5.981861  0.634680  7.838001
-4      clear  keeley      sample_0  Accelerometer  0.040040  5.687124  0.681383  8.030051
-5      clear  keeley      sample_0  Accelerometer  0.050076  5.500761  0.716859  8.043074
-  
 ['Accelerometer' 'Linear Accelerometer' 'Gyroscope' 'Magnetometer']
-                    X                                  Y                                Z                      
-                  min         max       mean         min        max      mean         min         max      mean
-skill_type                                                                                                     
-clear      -77.930914  110.074948   6.562284 -140.238217  54.445480 -6.724538 -123.019308   96.814389 -0.498202
-drive      -60.689037   87.740642  11.011933  -82.047924  52.677124 -1.026729  -76.300467   49.100044  1.820948
-drop       -35.929970  115.593821   9.895693 -134.155644  57.183994 -3.399897  -66.830321   79.963715  2.566827
-lob        -54.133621   73.091880   8.423340  -82.136362  77.285278 -2.708321  -93.895836   53.316372  4.647121
-smash      -97.049138  138.390759   7.911882 -155.703185  57.183994 -5.679510 -158.090786  118.243143 -0.339446
+  skill_type    user  sample_number  time  X_Accelerometer  Y_Accelerometer  Z_Accelerometer  X_Linear Accelerometer  Y_Linear Accelerometer  Z_Linear Accelerometer  X_Gyroscope  Y_Gyroscope  Z_Gyroscope  X_Magnetometer  Y_Magnetometer  Z_Magnetometer
+0      clear  keeley              0  0.00         6.648724         0.605491         7.740404                     NaN                     NaN                     NaN          NaN          NaN          NaN             NaN             NaN             NaN
+1      clear  keeley              0  0.01         6.541696         0.579295         7.732919                0.444033                0.243212                0.116630     0.133790     0.341643     0.017793       42.958206      -11.092033       26.174484
+2      clear  keeley              0  0.02         6.260880         0.532742         7.726632                0.207950                0.155021                0.058808     0.120539     0.351478     0.037069       42.744019      -11.037231       26.213936
+3      clear  keeley              0  0.03         5.981861         0.634680         7.838001               -0.048183                0.228001                0.128125     0.126878     0.356774     0.061455       42.706146      -11.064934       26.381683
+4      clear  keeley              0  0.04         5.687124         0.681383         8.030051               -0.309722                0.296517                0.291339     0.142171     0.297570     0.090196       42.835358      -10.900688       26.257538
 
-after trimming:
-(313684, 8)
+## init dataset:
+(133468, 16)
+skill_type                   0
+user                         0
+sample_number                0
+time                         0
+X_Accelerometer            954
+Y_Accelerometer            954
+Z_Accelerometer            954
+X_Linear Accelerometer    1078
+Y_Linear Accelerometer    1078
+Z_Linear Accelerometer    1078
+X_Gyroscope               1077
+Y_Gyroscope               1077
+Z_Gyroscope               1077
+X_Magnetometer            1077
+Y_Magnetometer            1077
+Z_Magnetometer            1077
+
+## after trimmed:
+(78328, 16)
+
+  null_values:
+  skill_type                  0
+  user                        0
+  sample_number               0
+  time                        0
+  X_Accelerometer           172
+  Y_Accelerometer           172
+  Z_Accelerometer           172
+  X_Linear Accelerometer    212
+  Y_Linear Accelerometer    212
+  Z_Linear Accelerometer    212
+  X_Gyroscope               212
+  Y_Gyroscope               212
+  Z_Gyroscope               212
+  X_Magnetometer            212
+  Y_Magnetometer            212
+  Z_Magnetometer            212
+
+## impute values by KNN:
+n_neighbor  = 10
+
+## after sliding window:
+(1527, 40)
+
+snd_try_50_25: trim -> impute -> sliding window - 0.66
+applied_kalman_50_25: trim -> impute -> kalman -> sliding window - 0.65
+snd_try_50_25_2: impute -> trim -> sliding window - 0.66
+applied_kalman_50_25_2: impute -> kalman -> trim -> sliding window - 0.67
+
+snd_try_100_50: trim -> impute -> sliding window - 0.69
+applied_kalman_100_50: trim -> impute -> kalman -> sliding window - 0.72
+snd_try_100_50_2: impute -> trim -> sliding window - 0.71
+applied_kalman_100_50_2: impute -> kalman -> trim -> sliding window - 0.73
