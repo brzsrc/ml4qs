@@ -18,6 +18,7 @@ class Task3:
         self.sensor_types = ["Accelerometer", "Linear Accelerometer", "Gyroscope", "Magnetometer"]
         self.dirs = ["X", "Y", "Z"]
         self.attrs = []
+        self.sample_rate = 100
         for sensor_type in self.sensor_types:
             for dir in self.dirs:
                 self.attrs.append(f"{dir}_{sensor_type}")
@@ -183,23 +184,42 @@ class Task3:
     #     print(df.isnull().sum())
     #     return df
 
+    def compute_fft_features(self, segment, sample_rate):
+        n = len(segment)
+        fft_vals = np.fft.fft(segment)
+        fft_freq = np.fft.fftfreq(n, d=1 / sample_rate)
+        mask = fft_freq >= 0
+        freqs = fft_freq[mask]
+        magnitudes = np.abs(fft_vals[mask])
+        # Basic features: total power, dominant frequency, max magnitude
+        total_power = np.sum(magnitudes ** 2)
+        dom_freq = freqs[np.argmax(magnitudes)]
+        max_magnitude = np.max(magnitudes)
+        return total_power, dom_freq, max_magnitude
+
     def apply_sliding_window2(self, df:pd.DataFrame, window_size: int, stride: int) -> pd.DataFrame:
         def sliding_window(sdf):
             sdf.reset_index(drop=True, inplace=True)
             for start in range(0, len(sdf) - window_size + 1, stride):
                 end = start + window_size
-                window = sdf[self.attrs].iloc[start:end]
-                mean_vals = window.mean()
-                std_vals = window.std()
+                window = sdf.iloc[start:end]
+                mean_vals = window[self.attrs].mean()
+                std_vals = window[self.attrs].std()
                 for attr in self.attrs:
                     sdf.at[end-1, f"{attr}_mean"] = mean_vals[attr]
                     sdf.at[end-1, f"{attr}_std"] = std_vals[attr]
+
+                    (sdf.at[end-1, f"{attr}_total_power"], sdf.at[end-1, f"{attr}_dom_freq"],
+                     sdf.at[end-1, f"{attr}_max_magnitude"])  = self.compute_fft_features(window[attr], self.sample_rate)
             print(sdf.dropna().shape)
             return sdf
 
         for attr in self.attrs:
             df[f"{attr}_mean"] = np.nan
             df[f"{attr}_std"] = np.nan
+            df[f"{attr}_total_power"] = np.nan
+            df[f"{attr}_dom_freq"] = np.nan
+            df[f"{attr}_max_magnitude"] = np.nan
 
         df = df.groupby("user skill_type".split()).apply(sliding_window).dropna().reset_index(drop=True)
         # _, (sdf, *_) = zip(*df.groupby("user skill_type sensor_type".split()))
@@ -210,26 +230,35 @@ class Task3:
         #     print(sdf.dropna())
         return df
 
+    def change_sample_number(self, df:pd.DataFrame) -> pd.DataFrame:
+        modified_dfs = []
+        unique_users = len(df["user"].unique())
+        for i, (_, sdf) in enumerate(df.groupby('user')):
+            print(i)
+            print(unique_users)
+            sdf["sample_number"] = sdf["sample_number"] + i * 11
+            modified_dfs.append(sdf)
+        df = pd.concat(modified_dfs, ignore_index=True)
+        return df
 
 
 if __name__ == '__main__':
     loader = JamesLoader()
     task3 = Task3()
-    task2 = Task2()
 
     df = loader.from_parquet()
+
     df = task3.impute_missing_data(df)
     df = task3.apply_kalman_filter(df)
     df = task3.trim_data(df)
-    # print(df.isnull().sum())
-    # df = task3.impute_missing_data(df)
-    # df = task3.apply_kalman_filter(df)
-    # print(df.shape)
-    # df = task3.apply_lowpass_filter(df)
     df = task3.apply_sliding_window2(df, 100, 50)
-    # print(df.head(10).to_string())
     print(df.shape)
-    # df.to_csv("datasets/snd_try_100_50_2.csv")
-    df.to_csv("datasets/applied_kalman_100_50_2.csv")
+    df = task3.change_sample_number(df)
+    print(df.shape)
+    df.to_csv("datasets/applied_fft_100_50_2_4ppl.csv")
+    # df.to_csv("datasets/applied_kalman_100_50_2.csv")
+
+    # df = task3.trim_data(df)
+    # df = task3.apply_sliding_window2(df, 100, 50)
 
 

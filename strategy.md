@@ -61,3 +61,22 @@ snd_try_100_50: trim -> impute -> sliding window - 0.69
 applied_kalman_100_50: trim -> impute -> kalman -> sliding window - 0.72
 snd_try_100_50_2: impute -> trim -> sliding window - 0.71
 applied_kalman_100_50_2: impute -> kalman -> trim -> sliding window - 0.73
+
+
+df = loader.from_parquet()
+df = task3.impute_missing_data(df)
+df = task3.apply_kalman_filter(df)
+df = task3.trim_data(df)
+df = task3.apply_sliding_window2(df, 100, 50)
+print(df.shape)
+df.to_csv("datasets/applied_fft_100_50.csv")
+
+
+df = task3.impute_missing_data(df)
+df = task3.apply_kalman_filter(df)
+df = task3.apply_sliding_window2(df, 100, 50)
+df = task3.trim_data(df)
+print(df.shape)
+df = task3.change_sample_number(df)
+print(df.shape)
+df.to_csv("datasets/applied_fft_100_50_2.csv")
