@@ -129,11 +129,12 @@ class Task4:
         rfc_base.fit(self.X_train, self.y_train)
         y_pred = rfc_base.predict(self.X_test)
         print(classification_report(self.y_test, y_pred))
+        print(confusion_matrix(self.y_test, y_pred))
 
 if __name__ == '__main__':
-    # CSV_FILE = 'datasets/applied_kalman_100_50_2.csv'
     # CSV_FILE = 'datasets/add_lowpass_filter.csv'
     CSV_FILE = 'datasets/applied_fft_100_50_2_4ppl.csv'
+    # CSV_FILE = 'datasets/applied_fft_100_50_2.csv'
 
     task4 = Task4(CSV_FILE, "keeley")
     task4.random_forest()

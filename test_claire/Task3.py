@@ -8,6 +8,8 @@ import scipy.signal as signal
 from numpy.random import sample
 from sklearn.impute import KNNImputer
 from filterpy.kalman import KalmanFilter
+from sklearn.preprocessing import MinMaxScaler
+
 from Task2 import Task2
 from test_claire.loader import JamesLoader
 
@@ -155,35 +157,6 @@ class Task3:
         # print(combined_df.isnull().sum())
         return combined_df
 
-    # def apply_sliding_window(self, df:pd.DataFrame) -> pd.DataFrame:
-    #     def sliding_window(sdf):
-    #         window_size = 50
-    #         stride = 25
-    #         results = []
-    #         for start in range(0, len(sdf) - window_size + 1, stride):
-    #             end = start + window_size
-    #             window = sdf[self.attrs].iloc[start:end]
-    #             mean_vals = window.mean()
-    #             std_vals = window.std()
-    #             summary_row = {
-    #                 'skill_type': sdf['skill_type'].iloc[end-1],  # or assign based on group
-    #                 'user': sdf['user'].iloc[end-1],
-    #                 'sample_number': sdf['sample_number'].iloc[end-1],
-    #                 'time': sdf['time'].iloc[end-1],
-    #             }
-    #             for attr in self.attrs:
-    #                 summary_row[f"{attr}"] = sdf[f"{attr}"].iloc[end-1]
-    #                 summary_row[f"{attr}_mean"] = mean_vals[f"{attr}"]
-    #                 summary_row[f"{attr}_std"] = std_vals[f"{attr}"]
-    #             results.append(summary_row)
-    #         summary_df = pd.DataFrame(results)
-    #         return summary_df
-    #
-    #
-    #     df = df.groupby("user skill_type".split()).apply(sliding_window).reset_index(drop=True)
-    #     print(df.isnull().sum())
-    #     return df
-
     def compute_fft_features(self, segment, sample_rate):
         n = len(segment)
         fft_vals = np.fft.fft(segment)
@@ -241,6 +214,15 @@ class Task3:
         df = pd.concat(modified_dfs, ignore_index=True)
         return df
 
+    def normalize_data(self, agg_data: pd.DataFrame) -> pd.DataFrame:
+        print(agg_data.columns)
+        dropped_cols = ["skill_type", "user", "sample_number", "time"]
+        df = agg_data.drop(columns=dropped_cols)
+        df2 = agg_data[dropped_cols].reset_index(drop=True)
+        norm = pd.DataFrame(MinMaxScaler().fit_transform(df)).reset_index(drop=True)
+        combined_df = pd.concat([df2, norm], axis=1, ignore_index=True)
+        combined_df.columns = agg_data.columns
+        return combined_df
 
 if __name__ == '__main__':
     loader = JamesLoader()
@@ -251,11 +233,12 @@ if __name__ == '__main__':
     df = task3.impute_missing_data(df)
     df = task3.apply_kalman_filter(df)
     df = task3.trim_data(df)
-    df = task3.apply_sliding_window2(df, 100, 50)
-    print(df.shape)
+    # df = task3.apply_sliding_window2(df, 100, 50)
     df = task3.change_sample_number(df)
-    print(df.shape)
-    df.to_csv("datasets/applied_fft_100_50_2_4ppl.csv")
+    df = task3.normalize_data(df)
+    print(df.head().to_string())
+    print(df.columns)
+    df.to_csv("datasets/lstm2.csv")
     # df.to_csv("datasets/applied_kalman_100_50_2.csv")
 
     # df = task3.trim_data(df)
