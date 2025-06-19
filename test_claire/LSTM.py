@@ -13,18 +13,22 @@ def create_sequences(data: pd.DataFrame, labels: pd.DataFrame, seq_type: str,
     sequences = []
     targets = []
 
-    for group, sdf in list(data.groupby(group)):
-        for i in range(len(sdf) - time_window + 1, stride):
+    for _, sdf in list(data.groupby(group)):
+        print(len(sdf) - time_window + 1)
+        for i in range(0, len(sdf) - time_window + 1, stride):
+            print(i)
             sdf_time_wind = sdf.drop(columns=[group]).iloc[i:i + time_window].to_numpy()
+            print(sdf_time_wind)
             sequences.append(sdf_time_wind)
-    for group, sdf in list(labels.groupby(group)):
-        for i in range(len(sdf) - time_window + 1, stride):
+
+    for _, sdf in list(labels.groupby(group)):
+        for i in range(0, len(sdf) - time_window + 1, stride):
             sdf_time_wind = sdf.drop(columns=[group]).iloc[i + time_window].to_numpy()
             targets.append(sdf_time_wind)
 
     sequences_tensor = torch.tensor(np.array(sequences), dtype=torch.float32)
     if seq_type == "classification":
-        targets_tensor = torch.tensor(np.array(targets).flatten(), dtype=torch.long) - 1
+        targets_tensor = torch.tensor(np.array(targets).flatten(), dtype=torch.long)
     else:
         targets_tensor = torch.tensor(np.array(targets), dtype=torch.float32)
     return sequences_tensor, targets_tensor
@@ -208,17 +212,23 @@ def training_pipeline(train_loader: DataLoader, test_loader: DataLoader, model_t
 
 
 if __name__ == '__main__':
-    CSV_FILE = 'static/feature_engineering/df_temporal.csv'
+    CSV_FILE = 'datasets/cnn.csv'
     df = pd.read_csv(CSV_FILE)
+    mapping = {'clear': 0, 'drive': 1, 'drop': 2, 'lob': 3, 'smash': 4}
+    df['skill_type'] = df['skill_type'].map(mapping)
+    train_df = df[df['user'] != 'alan']
+    test_df = df[df['user'] == 'alan']
 
-    X = df.drop(columns=["Unnamed: 0", "id", "date", "mood_class", "average_mood"])
-    print(X.head())
-    y = df[['group', 'mood_class']]
+    X_train = train_df.drop(columns=['Unnamed: 0', 'skill_type', 'user', "time"])
+    y_train = train_df[['sample_number','skill_type']]
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=32)
+    X_test = test_df.drop(columns=['Unnamed: 0', 'skill_type', 'user', "time"])
+    y_test = test_df[['sample_number','skill_type']]
     # Create sequences for training and testing datasets
     train_sequences, train_targets = create_sequences(X_train, y_train, "classification", "sample_number", 100, 50)
     test_sequences, test_targets = create_sequences(X_test, y_test, "classification", "sample_number", 100, 50)
+    print(train_sequences.shape, train_targets.shape)
+
     # torch.Size([48, 39, 12]) torch.Size([48, 39]): 48 seqs, each seq has len 39, each cell in seq has 12 variables
     # print(train_sequences.size(), train_targets.size())
     #
