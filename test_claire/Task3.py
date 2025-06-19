@@ -251,11 +251,11 @@ if __name__ == '__main__':
     df = task3.impute_missing_data(df)
     df = task3.apply_kalman_filter(df)
     df = task3.trim_data(df)
-    df = task3.apply_sliding_window2(df, 100, 50)
+    #df = task3.apply_sliding_window2(df, 100, 50)
     print(df.shape)
     df = task3.change_sample_number(df)
     print(df.shape)
-    df.to_csv("datasets/applied_fft_100_50_2_4ppl.csv")
+    df.to_csv("datasets/cnn.csv")
     # df.to_csv("datasets/applied_kalman_100_50_2.csv")
 
     # df = task3.trim_data(df)
